@@ -1,5 +1,5 @@
-\documentclass[12pt, a4paper]{book}
-
+\documentclass[12pt, a4paper, oneside]{book}
+% added oneside property to let the pages start equivalenty
 \usepackage[utf8]{inputenc} 
 \usepackage[T1]{fontenc}
 \usepackage{mathpazo} 
@@ -20,35 +20,35 @@
 
 \begin{document}
 
-    \sloppy
+\sloppy
 
-    \frontmatter
+\frontmatter
 
-    \input{frontstuff.tex}
+\input{frontstuff.tex}
 
-    \pagestyle{plain} 
+\pagestyle{plain}
 
-    \tableofcontents
+\tableofcontents
 
-    \cleardoublepage
+\cleardoublepage
 
-    %--------------------------------------------------------------------------------------
-    %	THESIS CONTENT - CHAPTERS
-    %--------------------------------------------------------------------------------------
-    \mainmatter
+%--------------------------------------------------------------------------------------
+%	THESIS CONTENT - CHAPTERS
+%--------------------------------------------------------------------------------------
+\mainmatter
 
-    \setcounter{page}{1}
+\setcounter{page}{1}
 
-    \def\thepage{\arabic{page}}
+\def\thepage{\arabic{page}}
 
-    \include{Chapters/Chapter1}
-    \include{Chapters/Chapter2} 
-    \include{Chapters/Chapter3}
-    \include{Chapters/Chapter4} 
-    \include{Chapters/Chapter5} 
+\include{Chapters/Chapter1}
+\include{Chapters/Chapter2}
+\include{Chapters/Chapter3}
+\include{Chapters/Chapter4}
+\include{Chapters/Chapter5}
 
-    \include{Appendices/AppendixTemplate.tex}
+\include{Appendices/AppendixTemplate.tex}
 
-    \bibliography{Ref}
+\bibliography{Ref}
 
-\end{document}  
+\end{document}
