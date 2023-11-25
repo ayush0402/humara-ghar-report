@@ -430,17 +430,38 @@ The linear regression model can be simple (with only one dependent and one indep
 The model was trained using the following code:
 
 \begin{lstlisting}[language=python]
-    def predict_price(location,Size,bath,BHK):
-    loc_index = np.where(X.columns == location)[0][0]
+    # Scaling the data
+    y_train= y_train.values.reshape(-1,1)
+    y_test= y_test.values.reshape(-1,1)
     
-    x = np.zeros(len(X.columns))
-    x[0]= BHK
-    x[1]= Size
-    x[2]= bath 
-    if loc_index >=0:
-        x[loc_index]=1
+    from sklearn.preprocessing import StandardScaler
+    sc_X = StandardScaler()
+    sc_y = StandardScaler()
+    X_train = sc_X.fit_transform(X_train)
+    X_test = sc_X.fit_transform(X_test)
+    y_train = sc_X.fit_transform(y_train)
+    y_test = sc_y.fit_transform(y_test)
+\end{lstlisting}
+
+\begin{lstlisting}[language=python]
+    print(X_train,y_train)
+\end{lstlisting}
+
+\begin{lstlisting}[language=python]
+    lm = LinearRegression()
+    lm.fit(X_train,y_train)
+    lm_prediction = lm.predict(X_test)
     
-    return lr_clf.predict([x])[0]
+    # Evaluation metrics
+    mae_lm = metrics.mean_absolute_error(y_test, lm_prediction)
+    mse_lm =  metrics.mean_squared_error(y_test, lm_prediction)
+    rmse_lm =  np.sqrt(mse_lm)
+\end{lstlisting}
+
+\begin{lstlisting}[language=python]
+    print('MAE:', mae_lm)
+    print('MSE:', mse_lm)
+    print('RMSE:', rmse_lm)
 \end{lstlisting}
 
 using linear regression model we created a function to predict rental prices
@@ -452,8 +473,7 @@ using linear regression model we created a function to predict rental prices
 
 \medskip
 \noindent
-After training our model we exported model as a pickel file so that we can load it in our flask server
-we also exported json file containing all available locations in our model
+This is basically utility file where we imported and loaded our model
 
 \begin{lstlisting}[language=python]
     import json
@@ -501,4 +521,47 @@ we also exported json file containing all available locations in our model
         print(get_location_name())
         print(get_estimated_price('Adambakkam',1200,2,3))
      
+\end{lstlisting}
+
+Flask Server to handle requests from the webapp
+
+\begin{lstlisting}[language=python]
+    from flask import Flask, request, jsonify
+    import util
+     
+    app = Flask(__name__)
+     
+    @app.route('/get_location_name',methods=['GET'])
+    def get_location_name():
+        try:
+            print("Before calling util.get_location_name()")
+            locations = util.get_location_name()
+            print("After calling util.get_location_name()")
+            response = jsonify({'locations': locations})
+            response.headers.add('Access-Control-Allow-Origin', '*')
+            return response
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+     
+    @app.route('/predict_rent_price', methods=['POST'])
+    def predict_rent_price():
+        try:
+            sqft = float(request.form['sqft'])
+            location = request.form['location']
+            bhk = int(request.form['bhk'])
+            bath = int(request.form['bath'])
+     
+            response = jsonify({
+                'estimated_price': util.get_estimated_price(location, sqft, bath, bhk)
+            })
+     
+            response.headers.add("Access-control-allow-origin", "*")
+            return response
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+     
+    if __name__ == "__main__":
+        print("Starting Python Flask Server for Rent Price Prediction Model")
+        util.load_saved_artifacts()
+        app.run() 
 \end{lstlisting}
