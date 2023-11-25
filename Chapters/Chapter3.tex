@@ -278,13 +278,13 @@ Digital agreements, including electronically signed rent agreements, hold legal 
 
 \subsection{AI-Driven Price Prediction Model}
 
-\textbf{Context}\par\medskip\noindent
+\subsubsection{Context}
 Housing in India varies from palaces of erstwhile maharajas to modern apartment buildings in big cities to tiny huts in far-flung villages. There has been tremendous growth in India's housing sector as incomes have risen. The Human Rights Measurement Initiative finds that India is doing 60.9\% of what should be possible at its level of income for the right to housing.\par
 \medskip
 Renting, also known as hiring or letting, is an agreement where a payment is made for the temporary use of a good, service, or property owned by another. A gross lease is when the tenant pays a flat rental amount and the landlord pays for all property charges regularly incurred by the ownership. Renting can be an example of the sharing economy.
 
 \clearpage
-\textbf{Dataset Glossary (Column-Wise)}\par\medskip\noindent
+\subsubsection{Data Glossary}
 \begin{itemize}
     \item \textbf{BHK:} Number of Bedrooms, Hall and Kitchen
     \item \textbf{Rent:} Price of Houses/Apartments/Flats.
@@ -298,3 +298,207 @@ Renting, also known as hiring or letting, is an agreement where a payment is mad
     \item \textbf{Bathroom:} Number of Bathrooms in the House/Apartment/Flat
     \item \textbf{Point of Contact:} Contact Number of the Owner of the House/Apartment/Flat
 \end{itemize}
+
+\bigskip
+\subsubsection{Data Analysis and Visualization}
+\textbf{Pairplot of data}\par\bigskip\noindent
+
+\begin{lstlisting}[language=python]
+    sns.pairplot(rent_data,height=2)
+    plt.show()
+\end{lstlisting}
+
+\clearpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Images/pairplot.png}
+    \caption{Pairplot of data}
+\end{figure}
+
+A univariate and bivariate analysis was done to flush out outliers.~\cite{house-rent-prediction-model}\par\medskip
+
+\noindent
+\textbf{Rent (Our Target Variable)}
+\begin{lstlisting}[language=python]
+    fig = px.histogram(rent_data,x='Rent',color_discrete_sequence = px.colors.qualitative.Set3, title="Rent Prices Distribution Histogram")
+    fig.show()
+    fig = px.box(rent_data, x="Rent", title='Boxplot for Rent Prices')
+    fig.show()
+\end{lstlisting}
+
+\clearpage
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Images/boxplotrent.png}
+\end{figure}
+
+\noindent\textbf{Observations:}
+There is one outlier so far out of the inter-quantile range.
+\medskip
+\noindent\textbf{Actions:}
+To remove outlier, as it may affect our assumptions about other variables and analysis
+
+\begin{lstlisting}[language=python]
+    print(np.where(rent_data['Rent']>2000000))
+\end{lstlisting}
+
+\noindent\textbf{Observations:}
+Outlier's position is at 1837th position in a dataframe.
+\medskip
+\noindent\textbf{Deleting the outlier}
+\begin{lstlisting}[language=python]
+    rent_data.drop([1837], axis=0, inplace=True)
+
+    fig = px.box(rent_data, x="Rent",title='Boxplot for Rent Prices')
+    fig.show()
+\end{lstlisting}
+
+\noindent\textbf{BHK}
+\begin{lstlisting}[language=python]
+    rent_data['BHK'].value_counts()rent_data['BHK'].value_counts()
+\end{lstlisting}
+
+
+\begin{lstlisting}[language=python]
+    sns.set_style('whitegrid')
+    fig,axes = plt.subplots(figsize=(12,8))
+    colors = ['#87ace8','#e3784d', '#6ecc64','#b644e3','#eb7c87', '#EAE509']
+    
+    ax = sns.countplot(x='BHK',data=rent_data, palette=['#e3784d','#87ace8', '#6ecc64','#b644e3','#eb7c87','#EAE509'])
+    for container in ax.containers:
+        ax.bar_label(container)
+    plt.title('Frequency of different number of BHKs present in Houses available for Rent',fontsize=15)
+    plt.show()
+    
+    fig = px.pie(rent_data, names='BHK', height=700, width= 700, color_discrete_sequence=px.colors.sequential.deep, title='Pie Chart for different number of BHKs present in Houses available for Rent')
+    fig.update_traces(textfont_size=15)
+    fig.show()
+\end{lstlisting}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Images/bhkfreq.png}
+\end{figure}
+
+\noindent\textbf{Observations:}
+House with 2 Bathrooms are most common for the houses put up on rent. Houses with 7 and 10 bathroom quite seems inappropriate and not much of use.
+\medskip
+
+\noindent\textbf{City}
+\begin{lstlisting}[language=python]
+    rent_data['City'].value_counts()
+\end{lstlisting}
+
+
+\begin{lstlisting}[language=python]
+    sns.set_style('whitegrid')
+    fig,axes = plt.subplots(figsize=(12,8))
+    colors = ['#87ace8','#e3784d', '#6ecc64','#b644e3','#eb7c87', '#EAE509']
+    
+    ax = sns.countplot(x='City',data=rent_data, palette=['#EAE509','#87ace8', '#6ecc64','#eb7c87','#e3784d','#b644e3'])
+    for container in ax.containers:
+        ax.bar_label(container)
+    plt.title('City wise Houses available for Rent',fontsize=15)
+    plt.show()
+    
+    fig = px.pie(rent_data, names='City', height=700, width= 700, color_discrete_sequence=px.colors.sequential.deep, title='Pie Chart for Houses available for Rent in different cities')
+    fig.update_traces(textfont_size=15)
+    fig.show()
+\end{lstlisting}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Images/citygraph.png}
+\end{figure}
+
+\noindent\textbf{Observations:}
+Mumbai, followed by Chennai and Hyderad has most number of rented houses, seems like there is very high demand considering the job corporates and other factors.
+\medskip
+
+\noindent\textbf{Liner Regression}\par
+\noindent\medskip
+A Linear Regression model was used to predict the prices in our application.\par
+\medskip
+The most extensively used modelling technique is linear regression, which assumes a linear connection between a dependent variable (Y) and an independent variable (X). It employs a regression line, also known as a best-fit line. The linear connection is defined as Y = c+m*X + e, where ‘c’ denotes the intercept, ‘m’ denotes the slope of the line, and ‘e’ is the error term.\par
+\medskip
+The linear regression model can be simple (with only one dependent and one independent variable) or complex (with numerous dependent and independent variables) (with one dependent variable and more than one independent variable).
+
+\medskip
+\noindent\textbf{Training the model}\par\medskip
+\noindent\medskip
+The model was trained using the following code:
+
+\begin{lstlisting}[language=python]
+    def predict_price(location,Size,bath,BHK):
+    loc_index = np.where(X.columns == location)[0][0]
+    
+    x = np.zeros(len(X.columns))
+    x[0]= BHK
+    x[1]= Size
+    x[2]= bath 
+    if loc_index >=0:
+        x[loc_index]=1
+    
+    return lr_clf.predict([x])[0]
+\end{lstlisting}
+
+using linear regression model we created a function to predict rental prices
+\begin{lstlisting}[language=python]
+    import pickle
+    with open('rent_prices_model.pickle','wb') as f:
+    pickle.dump(lr_clf,f)
+\end{lstlisting}
+
+\medskip
+\noindent
+After training our model we exported model as a pickel file so that we can load it in our flask server
+we also exported json file containing all available locations in our model
+
+\begin{lstlisting}[language=python]
+    import json
+    import pickle
+    import numpy as np
+    import sklearn
+     
+    __locations = None
+    __data_columns = None
+    __model = None
+     
+    def get_estimated_price(location,sqft,bath,bhk):
+        try:
+            loc_index = __data_columns.index(location.lower())
+        except:
+            loc_index =-1
+        x= np.zeros(len(__data_columns))
+        x[0]= bhk
+        x[1]= sqft
+        x[2]= bath
+        if loc_index >=0:
+            x[loc_index]=1
+     
+        return round(__model.predict([x])[0],2)
+     
+    def get_location_name():
+        return __locations
+     
+    def load_saved_artifacts():
+        print("loading saved artifacts... start")
+        global __data_columns
+        global __locations
+     
+        with open("./artifacts/columns.json",'r') as f:
+           __data_columns= json.load(f)['data_columns']
+           __locations = __data_columns[3:]
+     
+        global __model
+        with open("./artifacts/rent_prices_model_1.pickle",'rb') as f:
+            __model = pickle.load(f)
+        print("loading saved artifacts...done")
+     
+    if __name__ == '__main__':
+        load_saved_artifacts()
+        print(get_location_name())
+        print(get_estimated_price('Adambakkam',1200,2,3))
+     
+\end{lstlisting}
