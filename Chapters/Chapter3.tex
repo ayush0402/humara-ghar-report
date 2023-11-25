@@ -127,10 +127,174 @@ export async function GET(request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
+
   // URL to redirect to after sign in process completes
   return NextResponse.redirect(requestUrl.origin)
 }
 \end{lstlisting}
-
+\clearpage
 Part of inviting users to our application was having a attractive UI. We achieved this
-through discussing over design language and then finalising over shadcn's collection for our UI components.
+through discussing over design language and then finalising over shadcn's collection for our UI components. Shadcn-ui contains re-usable components built using Radix UI and Tailwind CSS.
+
+\subsubsection{Dark Mode Support}
+We are using next-themes package to support dark mode in our application. This package provides a useTheme hook that allows us to access the current theme and toggleTheme function to toggle between light and dark mode. We are using this hook to toggle between light and dark mode in our application.
+
+\begin{lstlisting}[language=bash, caption={Installing next-themes}]
+    npm install next-themes    
+\end{lstlisting}
+
+\noindent Creating a theme provider\par\medskip\noindent
+components/theme-provider.tsx
+
+\begin{lstlisting}[language=javascript, caption={Theme Provider}]
+"use client"
+
+import * as React from "react"
+import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { type ThemeProviderProps } from "next-themes/dist/types"
+    
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+    return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+}
+    
+\end{lstlisting}
+
+The created theme-provider is added to the root layout and linked with tailwind-css config file to achieve the proper result.
+
+\clearpage
+\subsection{Database Structure and Functionality}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{Images/schema_visualizer.png}
+    \caption{Funding trend analysis}
+\end{figure}
+This image describes the database structure of our application. We have used supabase's database and storage buckets to store our data. We have used supabase's auth to authenticate users and supabase's storage buckets to store images and other files.
+\clearpage
+
+\subsubsection{Why Supabase and PostgreSQL?}
+
+\noindent\textbf{Utilizing Row-Level Security (RLS) Policies}
+\par\smallskip\noindent One of the key features that drew us to Supabase is its implementation of Row-Level Security (RLS) policies. RLS policies enable fine-grained control over data access within the database by restricting users' access to specific rows based on defined security policies.
+
+In our room renting application, RLS policies play a pivotal role in ensuring data security and privacy. They allow us to enforce access control mechanisms at the row level, granting users access only to the data relevant to their interactions and permissions. For instance, RLS policies dictate that users can view and interact with property listings, roommate preferences, or matchmaking data only within the scope of their authorized permissions, enhancing data confidentiality and integrity.
+
+\par\medskip
+\noindent\textbf{Triggers in PostgreSQL}
+\par\smallskip\noindent PostgreSQL's robust support for triggers serves as a pivotal element in automating various processes within the database. Triggers enable the execution of predefined actions in response to specific database events, ensuring streamlined and automated workflows.
+
+In our application, triggers play a pivotal role in orchestrating interactions between users and property listings, facilitating personalized recommendations, and triggering roommate matchmaking processes. For instance, when a user expresses interest in a property or updates their preferences, triggers activate functions that analyze compatibility, recommend suitable listings, or initiate matchmaking processes.
+
+\par\medskip
+\noindent\textbf{PL/pgSQL Functions for Automation}
+\par\smallskip\noindent The integration of PL/pgSQL functions within PostgreSQL further amplifies the automation capabilities of our database. PL/pgSQL, a procedural language extension for PostgreSQL, allows the creation of custom functions to automate complex database operations.
+
+These functions empower our system to automate tasks such as automatically moving members to correct teams after they accept or decline an invite request.
+
+\clearpage
+\subsubsection{Team Invitation Management}
+
+Users can browser other users who have signed up for teams and filter them based on the their preferences, the preferences were already
+stored during onboarding and are used to calculate a score for each user. The score is calculated by comparing the user's preferences with the
+preferences of the user who is searching for a roommate.\par
+
+We are mainly taking advantage of two tables in our schema for this purpose, team\_members and team\_join\_invitations. The team\_members table
+contains mapping of users to teams and the team\_join\_invitations table contains list of all the invitations sent to users to join a team, with a column
+having the status of the invite as "waiting", "accepted" or "rejected".\par
+\medskip
+\noindent We have a postgres trigger in place watching over the value of status and it is triggered when the value of status changes from "waiting" to "accepted".
+
+\begin{lstlisting}[language=sql]
+CREATE TRIGGER "on_team_invitation_accepted_trigger"
+AFTER
+UPDATE ON "public"."team_join_invitations" FOR EACH ROW
+    WHEN (
+    (
+        ("old"."status" <> "new"."status")
+        AND (
+        "new"."status" = 'accepted'::"text"
+        )
+    )
+) EXECUTE FUNCTION "public"."handle_add_team_member_after_invitation_accepted"();
+\end{lstlisting}
+
+\noindent The trigger calls a function handle\_add\_team\_member\_after\_invitation\_accepted which adds the user to the team and updates the values in team\_members table.
+\begin{lstlisting}[language=sql]
+create function "public"."handle_add_team_member_after_invitation_accepted" () returns "trigger" language "plpgsql" security definer as $$BEGIN
+UPDATE team_members
+SET team_id = NEW.team_id
+WHERE user_id = NEW.invitee_user_id;
+    
+IF NOT FOUND THEN
+INSERT INTO team_members(user_id, team_id)
+VALUES (
+    NEW.invitee_user_id,
+    NEW.team_id
+    );
+END IF;
+RETURN NEW;
+END;
+$$;
+\end{lstlisting}
+
+\noindent The changes are then reflected in the application and the user is added to the team.
+
+\subsection{Rent Agreement Generation}
+
+The implementation of a multi-step form using the useMultiStepForm React hook stands as a cornerstone in our room renting application, specifically facilitating the seamless input of data required for generating rent agreements in PDF format. This client-side process employs the react-pdf package for PDF generation and utilizes file-saver to enable users to download the finalized agreement.\par\medskip
+
+\noindent
+\textbf{Functionality of the Mutli-Step Form}\par\medskip\noindent
+The useMultiStepForm hook was custom-built to guide users through a structured sequence of input fields necessary for creating a comprehensive rent agreement. Each step of the form collects specific information, such as:
+
+\begin{itemize}
+    \item Agreement details
+    \item Tenant details
+    \item Owner details
+    \item Property details
+    \item Additional details
+\end{itemize}
+\noindent
+The structured nature of the multi-step form ensures that users provide all necessary information required to generate a legally binding rent agreement.
+
+\medskip
+\noindent
+\textbf{Rent Agreement Download}\par\medskip\noindent
+Upon completion of the multi-step form, the entered data is compiled and processed client-side using the react-pdf package. This package dynamically generates a PDF document based on the collected input, encapsulating the terms and clauses specified in the rent agreement.\par\medskip
+
+Subsequently, the file-saver library is utilized to enable users to download the generated rent agreement PDF directly from the client-side interface, providing a convenient and immediate access method for users.
+
+\medskip
+\noindent
+\textbf{Status of Digital Agreements in Indian Law}\par\medskip\noindent
+In India, the status of digital agreements is governed by the Information Technology Act, 2000, and the Indian Contract Act, 1872. These legal frameworks recognize electronic documents and digital signatures as valid and enforceable, provided they comply with specific requirements, including:
+
+\begin{itemize}
+    \item Authentication of electronic records
+    \item Ensuring the integrity of the information
+    \item Obtaining consent from involved parties
+\end{itemize}
+Digital agreements, including electronically signed rent agreements, hold legal validity if they adhere to these stipulations outlined in Indian law.
+
+\subsection{AI-Driven Price Prediction Model}
+
+\textbf{Context}\par\medskip\noindent
+Housing in India varies from palaces of erstwhile maharajas to modern apartment buildings in big cities to tiny huts in far-flung villages. There has been tremendous growth in India's housing sector as incomes have risen. The Human Rights Measurement Initiative finds that India is doing 60.9\% of what should be possible at its level of income for the right to housing.\par
+\medskip
+Renting, also known as hiring or letting, is an agreement where a payment is made for the temporary use of a good, service, or property owned by another. A gross lease is when the tenant pays a flat rental amount and the landlord pays for all property charges regularly incurred by the ownership. Renting can be an example of the sharing economy.
+
+\clearpage
+\textbf{Dataset Glossary (Column-Wise)}\par\medskip\noindent
+\begin{itemize}
+    \item \textbf{BHK:} Number of Bedrooms, Hall and Kitchen
+    \item \textbf{Rent:} Price of Houses/Apartments/Flats.
+    \item \textbf{Size:} Size of the House/Apartment/Flat in Square Feet.
+    \item \textbf{Floor:} Floor Number of the House/Apartment/Flat
+    \item \textbf{Area Type:} Type of the Area (e.g. Super built-up Area, Built-up Area, Carpet Area)
+    \item \textbf{Area Locally:} Locality of the House/Apartment/Flat
+    \item \textbf{City:} City in which the House/Apartment/Flat is located
+    \item \textbf{Furnishing Status:} Furnishing Status of the House/Apartment/Flat (e.g. Fully Furnished, Semi-Furnished, Unfurnished)
+    \item \textbf{Tenant Type:} Type of Tenant (e.g. Family, Bachelor, Company Lease, etc.)
+    \item \textbf{Bathroom:} Number of Bathrooms in the House/Apartment/Flat
+    \item \textbf{Point of Contact:} Contact Number of the Owner of the House/Apartment/Flat
+\end{itemize}
