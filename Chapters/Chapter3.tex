@@ -4,4 +4,133 @@
 
 \label{Chapter3} % For referencing the chapter elsewhere, use \ref{Chapter3} 
 
-Write your chapter here 
+\section{Development Approach}
+
+While starting the project, we had two methods or idealogies to go by
+either following a waterfall model or an agile model. The waterfall model
+is a sequential design process, used in software development processes,
+in which progress is seen as flowing steadily downwards (like a waterfall)
+while the agile model is a practice that promotes continuous iteration of
+development and testing throughout the software development lifecycle of the
+project. Both of these models have their own advantages and disadvantages.\par\medskip
+
+After careful consideration, we decided to go with a Hybrid model which is a
+combination of both waterfall and agile model. Initially, we followed a Waterfall approach
+for planning and designing phases of the project. After the planning and designing phase,
+we tranisitioned to an agile model for the development phase of the project. This approach
+helped us to have a clear idea of what we were going to do and how we were going to do it by
+implementing the features in sprints, continuosly monitoring the resultings, analyzing data, and making
+adjustments.
+
+\section{Iterations and Sprints}
+Our application development journey was organized into distinct sprints, each focusing on pivotal components vital to our renting platform's functionality and user experience.\par\medskip
+\clearpage
+
+\textbf{Sprint 1: Onboarding Experience}
+In this sprint, our emphasis was on crafting a seamless onboarding flow. We concentrated on creating an intuitive and user-friendly registration process, ensuring users effortlessly navigate through initial setup, profile creation, and account authentication.\medskip
+
+\textbf{Sprint 2: Dynamic Dashboard Design}
+Our team dedicated this sprint to developing a dynamic and informative dashboard. Here, the focus was on designing an interface that offers users a comprehensive overview of their rented properties, team collaborations, and reminders, fostering a centralized hub for efficient property management.\medskip
+
+\textbf{Sprint 3: Room Rental \& Roommate Finder Logic}
+In this sprint, the spotlight was on formulating and implementing robust logic for room rental and roommate finder functionalities. We concentrated on refining algorithms that power property searches, match roommates based on preferences, and streamline the rental process for individual users and collaborative teams.\medskip
+
+\textbf{Sprint 4: AI-Driven Price Prediction Model}
+A critical phase, this sprint was dedicated to integrating an AI-driven price prediction model. We meticulously crafted and integrated machine learning algorithms to provide accurate rental price estimations, enhancing transparency and aiding users in making informed decisions.\medskip
+
+\textbf{Sprint 5: Team Invitation Management}
+Here, our focus shifted towards creating and implementing the logic necessary to create and manage team invitations effectively. We engineered a system that allows users to form collaborative teams seamlessly, enabling efficient property searches and shared responsibilities among team members.\medskip
+
+\textbf{Sprint 6: Robust Chat System}
+The final sprint concentrated on the development of a robust chat system. We engineered a communication platform that fosters seamless interaction between users, facilitating easy communication within collaborative teams, aiding in decision-making, and enhancing overall user engagement.\par\bigskip
+
+These delineated sprints encapsulate the strategic breakdown of our development process, allowing us to iteratively build, test, and refine specific components of our renting application, culminating in a comprehensive and user-centric platform.
+
+\section{Tools and Technologies}
+
+\subsection{Programming Languages and Frameworks}
+
+\textbf{Next.js Framework with TypeScript:}
+Our renting application was built upon the Next.js framework, utilizing TypeScript for enhanced type safety and code clarity. Next.js, combined with TypeScript, empowered us to develop a robust, scalable, and statically typed application, ensuring improved code quality and developer productivity.
+
+\medskip\noindent
+\textbf{Shadcn UI Components:}
+Shadcn UI components played a pivotal role in expediting the frontend development process. These pre-designed components, coupled with TypeScript support, facilitated rapid UI development, ensuring consistency and aesthetic appeal across the application.
+
+\medskip\noindent
+\textbf{React-Hook-Forms with Zod Validators:}
+For efficient form management and data validation, we integrated React-Hook-Forms with Zod validators. This amalgamation, leveraging TypeScript's typing capabilities, allowed for seamless form handling, validation, and data integrity checks.
+
+\subsection{Development Tools}
+\textbf{VSCode Editor:}
+Visual Studio Code (VSCode) remained our IDE of choice, offering a robust development environment with TypeScript support. Its extensive feature set, including debugging tools and TypeScript linting, facilitated efficient coding practices and collaboration among team members.
+
+\medskip\noindent
+\textbf{Git/GitHub Version Control:}
+Git in conjunction with GitHub served as our version control system, allowing collaborative development and code management. TypeScript's typing features integrated seamlessly with Git, aiding in version tracking and ensuring code consistency.
+
+\medskip\noindent
+\textbf{Vercel for Deployment:}
+Vercel's deployment platform, compatible with TypeScript and Next.js, streamlined our deployment process. This powerful platform facilitated quick and reliable deployment, ensuring that updates were efficiently pushed to production with TypeScript support.
+
+\medskip\noindent
+\textbf{Docker}
+Docker was used to run supabase locally for running supabase-cli scripts to update database migration files.
+
+\subsection{Database Management:}
+\textbf{Supabase:}
+Postgres-Based DB with Buckets for Data and Image Storage;
+Supabase, integrated with TypeScript for seamless data handling, functioned as our primary database solution. The PostgreSQL-based database, coupled with TypeScript's typing features, provided a secure and scalable infrastructure for storing application data and images through Supabase buckets.
+
+\section{Development Process}
+
+This section will summarize the development process, including how we approached the problems technically.
+
+\subsection{Setup}
+
+The project was initialized using create-next-app with the supabase template.\medskip
+\begin{lstlisting}[language=bash]
+    npx create-next-app -e with-supabase
+\end{lstlisting}
+
+\subsubsection{Cookie-based Auth}
+We are using Cookie-based Auth in our web application. The Next.js Auth Helpers package configures Supabase Auth to store the user's session in a cookie, rather than localStorage. This makes it available across the client and server of the App Router - Client Components, Server Components, Server Actions, Route Handlers and Middleware. The session is automatically sent along with any requests to Supabase.\smallskip
+
+\begin{lstlisting}[language=bash, caption={Installing Auth Helpers}]
+npm install @supabase/auth-helpers-nextjs @supabase/supabase-js
+\end{lstlisting}
+\noindent
+We are then declaring environment variables in .env.local file with following environment variables:
+\begin{lstlisting}[caption={.env.local}]
+    NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+\end{lstlisting}
+
+The Next.js Auth Helpers are configured to use the server-side auth flow to sign in users
+into the application. For this we had to setup a Code Exchange route, to exchange an auth
+code for the user's session, which is set as a cookie for future requests made to Supabase.
+
+We created a callback route handler that performs this exchange at app/api/auth/callback/route.js:
+
+\begin{lstlisting}[language=javascript, caption={Callback Route Handler}]
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
+
+export async function GET(request) {
+  const requestUrl = new URL(request.url)
+  const code = requestUrl.searchParams.get('code')
+
+  if (code) {
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    await supabase.auth.exchangeCodeForSession(code)
+  }
+
+  // URL to redirect to after sign in process completes
+  return NextResponse.redirect(requestUrl.origin)
+}
+\end{lstlisting}
+
+Part of inviting users to our application was having a attractive UI. We achieved this
+through discussing over design language and then finalising over shadcn's collection for our UI components.
